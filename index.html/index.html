@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coach Workout App</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --accent-color: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --radius: 12px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 480px;
+      min-height: 90vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .back-btn {
+      background: var(--card-bg);
+      border: 1px solid #334155;
+      color: var(--accent-color);
+      padding: 8px 14px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-weight: 600;
+      display: none;
+    }
+
+    /* Grid for Categories */
+    .category-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid #334155;
+      border-radius: var(--radius);
+      padding: 20px;
+      cursor: pointer;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+      text-align: center;
+    }
+
+    .card:hover {
+      transform: translateY(-3px);
+      border-color: var(--accent-color);
+    }
+
+    .card h3 {
+      font-size: 1.1rem;
+      color: var(--text-main);
+    }
+
+    /* Routine & Exercise Views */
+    .routine-list, .exercise-view {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .exercise-card {
+      background: var(--card-bg);
+      border: 1px solid #334155;
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .exercise-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .exercise-header h4 {
+      font-size: 1.1rem;
+      color: var(--accent-color);
+    }
+
+    .exercise-specs {
+      display: flex;
+      gap: 12px;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 14px;
+    }
+
+    .video-container {
+      position: relative;
+      width: 100%;
+      padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .video-container video, .video-container iframe {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <header>
+      <button id="backBtn" class="back-btn" onclick="handleBack()">← Back</button>
+      <h1 id="screenTitle">Select Category</h1>
+    </header>
+
+    <!-- 1. Category Selection View -->
+    <div id="categoryGrid" class="category-grid"></div>
+
+    <!-- 2. Routine List View -->
+    <div id="routineList" class="routine-list"></div>
+
+    <!-- 3. Exercises Detail View -->
+    <div id="exerciseView" class="exercise-view"></div>
+  </div>
+
+  <script>
+    // ==========================================
+    // EDIT YOUR WORKOUT DATA HERE
+    // ==========================================
+    const workoutData = [
+      {
+        category: "HIIT",
+        routines: [
+          {
+            title: "20-Min Full Body Torch",
+            exercises: [
+              { name: "Burpees", sets: 4, reps: "40s work / 20s rest", rest: "20s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" },
+              { name: "Mountain Climbers", sets: 4, reps: "40s work / 20s rest", rest: "20s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" }
+            ]
+          }
+        ]
+      },
+      {
+        category: "CrossFit",
+        routines: [
+          {
+            title: "Classic WOD: Fran Style",
+            exercises: [
+              { name: "Thrusters", sets: 3, reps: "21-15-9", rest: "60s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" },
+              { name: "Pull-Ups", sets: 3, reps: "21-15-9", rest: "60s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" }
+            ]
+          }
+        ]
+      },
+      {
+        category: "Cardio",
+        routines: [
+          {
+            title: "Low Impact Aerobic",
+            exercises: [
+              { name: "Jump Rope / Line Hops", sets: 5, reps: "2 mins", rest: "45s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" }
+            ]
+          }
+        ]
+      },
+      {
+        category: "Upper Body",
+        routines: [
+          {
+            title: "Upper Strength A",
+            exercises: [
+              { name: "Incline Dumbbell Press", sets: 3, reps: "10 reps", rest: "90s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" },
+              { name: "Chest-Supported T-Bar Row", sets: 3, reps: "10 reps", rest: "90s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" }
+            ]
+          }
+        ]
+      },
+      {
+        category: "Lower Body",
+        routines: [
+          {
+            title: "Leg Hypertrophy",
+            exercises: [
+              { name: "Barbell Back Squat", sets: 4, reps: "6-8 reps", rest: "120s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" },
+              { name: "Romanian Deadlift (RDL)", sets: 3, reps: "8-10 reps", rest: "90s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" }
+            ]
+          }
+        ]
+      },
+      {
+        category: "Chest",
+        routines: [
+          {
+            title: "Heavy Push Day",
+            exercises: [
+              { name: "Barbell Bench Press", sets: 4, reps: "8-10 reps", rest: "90s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" },
+              { name: "Incline Dumbbell Fly", sets: 3, reps: "12-15 reps", rest: "60s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" }
+            ]
+          }
+        ]
+      },
+      {
+        category: "Back",
+        routines: [
+          {
+            title: "Lat & Density",
+            exercises: [
+              { name: "Neutral Grip Lat Pulldown", sets: 4, reps: "10-12 reps", rest: "75s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" },
+              { name: "Bent-Over Barbell Row", sets: 4, reps: "8-10 reps", rest: "90s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" }
+            ]
+          }
+        ]
+      },
+      {
+        category: "Abs",
+        routines: [
+          {
+            title: "Core Stability & Burn",
+            exercises: [
+              { name: "Hanging Leg Raise", sets: 3, reps: "12-15 reps", rest: "45s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" },
+              { name: "Ab Wheel Rollout", sets: 3, reps: "10-12 reps", rest: "60s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" }
+            ]
+          }
+        ]
+      },
+      {
+        category: "Leg",
+        routines: [
+          {
+            title: "Quad & Hamstring Focus",
+            exercises: [
+              { name: "Bulgarian Split Squat", sets: 3, reps: "10 each leg", rest: "60s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" },
+              { name: "Lying Leg Curl", sets: 3, reps: "12-15 reps", rest: "60s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" }
+            ]
+          }
+        ]
+      },
+      {
+        category: "Shoulder",
+        routines: [
+          {
+            title: "3D Delts Routine",
+            exercises: [
+              { name: "Seated Overhead DB Press", sets: 4, reps: "10-12 reps", rest: "75s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" },
+              { name: "Cable Lateral Raise", sets: 4, reps: "15-20 reps", rest: "45s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" }
+            ]
+          }
+        ]
+      },
+      {
+        category: "Arm",
+        routines: [
+          {
+            title: "Biceps & Triceps Blast",
+            exercises: [
+              { name: "Incline Dumbbell Curl", sets: 3, reps: "12 reps", rest: "60s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" },
+              { name: "Triceps Rope Pushdown", sets: 3, reps: "12-15 reps", rest: "60s", videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" }
+            ]
+          }
+        ]
+      }
+    ];
+
+    // ==========================================
+    // UI NAVIGATION CONTROLLER
+    // ==========================================
+    let currentView = 'categories';
+    let selectedCategoryData = null;
+
+    const screenTitle = document.getElementById('screenTitle');
+    const backBtn = document.getElementById('backBtn');
+    const categoryGrid = document.getElementById('categoryGrid');
+    const routineList = document.getElementById('routineList');
+    const exerciseView = document.getElementById('exerciseView');
+
+    function renderCategories() {
+      categoryGrid.innerHTML = '';
+      workoutData.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<h3>${item.category}</h3>`;
+        card.onclick = () => selectCategory(item);
+        categoryGrid.appendChild(card);
+      });
+    }
+
+    function selectCategory(catData) {
+      selectedCategoryData = catData;
+      currentView = 'routines';
+      
+      screenTitle.innerText = catData.category;
+      backBtn.style.display = 'block';
+      categoryGrid.style.display = 'none';
+      routineList.style.display = 'flex';
+      exerciseView.style.display = 'none';
+
+      routineList.innerHTML = '';
+      catData.routines.forEach(routine => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `<h3>${routine.title}</h3><p style="color:var(--text-muted); font-size:0.85rem; margin-top:4px;">${routine.exercises.length} Exercises</p>`;
+        card.onclick = () => selectRoutine(routine);
+        routineList.appendChild(card);
+      });
+    }
+
+    function selectRoutine(routine) {
+      currentView = 'exercises';
+      screenTitle.innerText = routine.title;
+      routineList.style.display = 'none';
+      exerciseView.style.display = 'flex';
+
+      exerciseView.innerHTML = '';
+      routine.exercises.forEach(ex => {
+        const exCard = document.createElement('div');
+        exCard.className = 'exercise-card';
+        exCard.innerHTML = `
+          <div class="exercise-header">
+            <h4>${ex.name}</h4>
+          </div>
+          <div class="exercise-specs">
+            <span><strong>Sets:</strong> ${ex.sets}</span>
+            <span><strong>Reps:</strong> ${ex.reps}</span>
+            <span><strong>Rest:</strong> ${ex.rest}</span>
+          </div>
+          <div class="video-container">
+            <video controls playsinline preload="metadata">
+              <source src="${ex.videoUrl}" type="video/mp4">
+              Your browser does not support video playback.
+            </video>
+          </div>
+        `;
+        exerciseView.appendChild(exCard);
+      });
+    }
+
+    function handleBack() {
+      if (currentView === 'exercises') {
+        selectCategory(selectedCategoryData);
+      } else if (currentView === 'routines') {
+        currentView = 'categories';
+        screenTitle.innerText = 'Select Category';
+        backBtn.style.display = 'none';
+        categoryGrid.style.display = 'grid';
+        routineList.style.display = 'none';
+        exerciseView.style.display = 'none';
+      }
+    }
+
+    // Initialize App
+    renderCategories();
+  </script>
+</body>
+</html>
